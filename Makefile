@@ -1,9 +1,12 @@
 # Kore Makefile
 
 CC?=gcc
+AR?=ar
 PREFIX?=/usr/local
 KORE=kore
+LIBKORE=lib$(KORE).a
 INSTALL_DIR=$(PREFIX)/bin
+LIB_DIR=$(PREFIX)/lib
 INCLUDE_DIR=$(PREFIX)/include/kore
 
 S_SRC=	src/kore.c src/accesslog.c src/auth.c src/buf.c src/cli.c \
@@ -58,19 +61,25 @@ else
 	S_SRC+=src/bsd.c
 endif
 
-$(KORE): $(S_OBJS)
-	$(CC) $(S_OBJS) $(LDFLAGS) -o $(KORE)
-
 all: $(KORE)
+
+$(KORE): $(LIBKORE)
+	$(CC) -L. -l$(KORE) $(LDFLAGS) -o $(KORE)
+
+$(LIBKORE): $(S_OBJS)
+	$(AR) r $(LIBKORE) $(S_OBJS)
 
 install:
 	mkdir -p $(INCLUDE_DIR)
+	mkdir -p $(LIB_DIR)
 	mkdir -p $(INSTALL_DIR)
 	install -m 555 $(KORE) $(INSTALL_DIR)/$(KORE)
+	install -m 644 $(LIBKORE) $(LIB_DIR)/$(LIBKORE)
 	install -m 644 includes/*.h $(INCLUDE_DIR)
 
 uninstall:
 	rm -f $(INSTALL_DIR)/$(KORE)
+	rm -f $(LIB_DIR)/$(LIBKORE)
 	rm -rf $(INCLUDE_DIR)
 
 .c.o:
@@ -78,6 +87,6 @@ uninstall:
 
 clean:
 	find . -type f -name \*.o -exec rm {} \;
-	rm -f $(KORE)
+	rm -f $(KORE) $(LIBKORE)
 
 .PHONY: all clean
